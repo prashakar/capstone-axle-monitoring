@@ -3,8 +3,30 @@
 // Use the Internal Arduino EEPROM as storage
 #include <EEPROM.h>
 
+//Include the LCD Display library
+#include <LiquidCrystal.h>
+
 #define TABLE_SIZE 512
-#define RECORDS_TO_CREATE 20
+#define RECORDS_TO_CREATE 60
+
+/*
+The circuit:
+ * LCD RS pin to digital pin 12
+ * LCD Enable pin to digital pin 11
+ * LCD D4 pin to digital pin 5
+ * LCD D5 pin to digital pin 4
+ * LCD D6 pin to digital pin 3
+ * LCD D7 pin to digital pin 2
+ * LCD R/W pin to ground
+ * LCD VSS pin to ground
+ * LCD VCC pin to 5V
+ * 10K resistor:
+ * ends to +5V and ground
+ * wiper to LCD VO pin (pin 3)
+ */
+//Initialize the library with num of interface pins
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
 
 struct LogEvent {
   int id;
@@ -29,6 +51,7 @@ EDB db(&writer, &reader);
 
 //init global variables
 int angleVal = 0;
+int reading = 0;
 int axleAngle = 0;
 
 int minVal = 0;
@@ -37,6 +60,12 @@ int neutralVal = ((maxVal+minVal)/2);
 
 void setup() {
   Serial.begin(9600);
+
+  //setup the lcd's num of columns and rows
+  lcd.begin(16,2);
+
+//  //print initialization message
+//  lcd.print("Display init");
 
   Serial.print("Creating table...");
   // create table at with starting address 0
@@ -66,14 +95,34 @@ void createRecords(int num_recs) {
   for (int recno = 1; recno <= num_recs; recno++)
   {
     logEvent.id = recno; 
-    logEvent.axleAngle = analogRead(A0);
+    reading = analogRead(A0);
+    logEvent.axleAngle = (reading - neutralVal)/4;
+    Serial.print("Reading: ");
+    Serial.println(reading);
     Serial.print("Angle stored: ");
     Serial.println(logEvent.axleAngle);
+    //lcd.clear();
     EDB_Status result = db.appendRec(EDB_REC logEvent);
     if (result != EDB_OK) printError(result);
     else {delay(400);}
+    if (-10 < logEvent.axleAngle && logEvent.axleAngle < 10){
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("OK");
+      lcd.noBlink();
+    } else {
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("NOK");
+      lcd.setCursor(0,1);
+      lcd.print("WEAR DETECTED");
+      lcd.blink();
+    }
   }
   Serial.println("DONE");
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Done");
 }
 
 void printError(EDB_Status err) {
