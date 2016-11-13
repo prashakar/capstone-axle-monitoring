@@ -1,4 +1,5 @@
 #include <EDB.h>
+#include <SoftwareSerial.h>
 
 // Use the Internal Arduino EEPROM as storage
 #include <EEPROM.h>
@@ -7,7 +8,7 @@
 #include <LiquidCrystal.h>
 
 #define TABLE_SIZE 512
-#define RECORDS_TO_CREATE 60
+#define RECORDS_TO_CREATE 100
 
 /*
 The circuit:
@@ -27,6 +28,8 @@ The circuit:
 //Initialize the library with num of interface pins
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
+//Initialize the library with RX and TX pins
+//SoftwareSerial btSerial(6,7); //RX, TX
 
 struct LogEvent {
   int id;
@@ -59,23 +62,26 @@ int maxVal = 1023;
 int neutralVal = ((maxVal+minVal)/2);
 
 void setup() {
-  Serial.begin(9600);
-
+  //Serial.begin(9600);
+  
+  //Begin serial connection to bluetooth module
+  Serial.begin(38400);
+  //Serial.println("CONNECTED BT");
   //setup the lcd's num of columns and rows
   lcd.begin(16,2);
 
 //  //print initialization message
 //  lcd.print("Display init");
 
-  Serial.print("Creating table...");
+  //Serial.print("Creating table...");
   // create table at with starting address 0
   db.create(0, TABLE_SIZE, (unsigned int)sizeof(logEvent));
-  Serial.println("DONE");
+  //Serial.println("DONE");
 
   createRecords(RECORDS_TO_CREATE);
   countRecords();
-  selectAll();
-  Serial.println("End of program");
+  //selectAll();
+  Serial.print("~");
   
 }
 
@@ -91,25 +97,29 @@ void loop() {
 }
 
 void createRecords(int num_recs) {
-  Serial.print("Creating Records...");
-  for (int recno = 1; recno <= num_recs; recno++)
-  {
+  //Serial.print("Creating Records...");
+  for (int recno = 1; recno <= num_recs; recno++) {
     logEvent.id = recno; 
     reading = analogRead(A0);
     logEvent.axleAngle = (reading - neutralVal)/4;
-    Serial.print("Reading: ");
-    Serial.println(reading);
-    Serial.print("Angle stored: ");
-    Serial.println(logEvent.axleAngle);
+    //Serial.print("Reading: ");
+    //Serial.println(reading);
+    //Serial.print("Angle stored: ");
+    Serial.print(logEvent.axleAngle);
+//    Serial.print("&");
+
+    //Serial.print("Angle stored: ");
+    //Serial.println(logEvent.axleAngle);
     //lcd.clear();
     EDB_Status result = db.appendRec(EDB_REC logEvent);
     if (result != EDB_OK) printError(result);
-    else {delay(400);}
+    else {delay(100);}
     if (-10 < logEvent.axleAngle && logEvent.axleAngle < 10){
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("OK");
       lcd.noBlink();
+      
     } else {
       lcd.clear();
       lcd.setCursor(0,0);
@@ -117,34 +127,35 @@ void createRecords(int num_recs) {
       lcd.setCursor(0,1);
       lcd.print("WEAR DETECTED");
       lcd.blink();
+      Serial.print("*");
     }
   }
-  Serial.println("DONE");
+  //Serial.println("DONE");
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("Done");
 }
 
 void printError(EDB_Status err) {
-  Serial.print("ERROR: ");
+  //Serial.print("ERROR: ");
   switch (err)
   {
     case EDB_OUT_OF_RANGE:
-      Serial.println("Recno out of range");
+      //Serial.println("Recno out of range");
       break;
     case EDB_TABLE_FULL:
-      Serial.println("Table full");
+      //Serial.println("Table full");
       break;
     case EDB_OK:
     default:
-      Serial.println("OK");
+      //Serial.println("OK");
       break;
   }
 }
 
 void countRecords() {
-  Serial.print("Record Count: "); 
-  Serial.println(db.count());
+  //Serial.print("Record Count: "); 
+  //Serial.println(db.count());
 }
 
 void selectAll() {  
