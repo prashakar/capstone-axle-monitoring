@@ -678,6 +678,8 @@ void setup()
   int error;
   uint8_t c;
 
+ //Begin serial connection to bluetooth module
+//  Serial.begin(38400);
 
   Serial.begin(9600);
   while (!Serial) {
@@ -736,6 +738,9 @@ void setup()
   MPU6050_write_reg69 (MPU6050_PWR_MGMT_1, 0);
 }
 
+int currentDataSet = 0;
+int16_t wearThreshold = 2400;
+int16_t dataSets[100];
 
 void loop()
 {
@@ -744,8 +749,8 @@ void loop()
   accel_t_gyro_union accel_t_gyro;
 
 
-  Serial.println(F(""));
-  Serial.println(F("MPU-6050-CAPSTONE 68"));
+//  Serial.println(F(""));
+//  Serial.println(F("MPU-6050-CAPSTONE 68"));
 
   // Read the raw values.
   // Read 14 bytes at once, 
@@ -754,8 +759,8 @@ void loop()
   // there is no filter enabled, and the values
   // are not very stable.
   error = MPU6050_read (MPU6050_ACCEL_XOUT_H, (uint8_t *) &accel_t_gyro, sizeof(accel_t_gyro));
-  Serial.print(F("Read accel, temp and gyro, error = "));
-  Serial.println(error,DEC);
+//  Serial.print(F("Read accel, temp and gyro, error = "));
+//  Serial.println(error,DEC);
 
 
   // Swap all high and low bytes.
@@ -776,13 +781,13 @@ void loop()
 
   // Print the raw acceleration values
 
-  Serial.print(F("accel x,y,z: "));
-  Serial.print(accel_t_gyro.value.x_accel, DEC);
-  Serial.print(F(", "));
-  Serial.print(accel_t_gyro.value.y_accel, DEC);
-  Serial.print(F(", "));
-  Serial.print(accel_t_gyro.value.z_accel, DEC);
-  Serial.println(F(""));
+//  Serial.print(F("accel x,y,z: "));
+//  Serial.print(accel_t_gyro.value.x_accel, DEC);
+//  Serial.print(F(", "));
+//  Serial.print(accel_t_gyro.value.y_accel, DEC);
+//  Serial.print(F(", "));
+//  Serial.print(accel_t_gyro.value.z_accel, DEC);
+//  Serial.println(F(""));
 
   int16_t x_value = accel_t_gyro.value.x_accel;
 
@@ -888,18 +893,62 @@ void loop()
     myFile.print(x_value);
     myFile.print(",");
     myFile.println(accel_t_gyro2.value.x_accel);
+
+    dataSets[currentDataSet] = accel_t_gyro2.value.x_accel;
+
+    // increment the number of data sets
+    currentDataSet++;
     
     //myFile.println(accel_t_gyro2.value.y_accel);
     //myFile.println(accel_t_gyro2.value.z_accel);
 
-  // close the file:
-    myFile.close();
+  
     Serial.println("done 0x69.");
   } else {
     // if the file didn't open, print an error:
     Serial.println("error opening data.txt");
   }
 
+  if (currentDataSet >= 100) {
+    // 1 second worth of data collected
+    // TODO: calculate the absolute avg value
+    // TODO: if > wearThreshold
+
+    int32_t sum = 0;
+    for (int i = 0; i < 100; i++) {
+      sum = sum + abs(dataSets[i]);
+    }
+
+    // now calculate the avg
+    double absAverage = sum/100;
+
+    // check if the absolute average is within the threshold
+    if (absAverage < wearThreshold) {
+      // OK
+      myFile.println("SYSTEM_OK");
+      Serial.println("SYSTEM_OK");
+      Serial.println(absAverage);
+      myFile.println(absAverage);
+      delay(5000);
+
+    } else {
+      // NOK
+      myFile.println("WEAR_WARNING");
+      Serial.println("WEAR_WARNING");
+      Serial.println(absAverage);
+      myFile.println(absAverage);
+      delay(5000);
+
+    }
+
+    currentDataSet = 0;
+    memset(dataSets, 0, sizeof dataSets);
+    
+    
+  }
+
+// close the file:
+    myFile.close();
 
   // The temperature sensor is -40 to +85 degrees Celsius.
   // It is a signed integer.
