@@ -679,33 +679,33 @@ void setup()
   uint8_t c;
 
  //Begin serial connection to bluetooth module
-//  Serial.begin(38400);
+  Serial.begin(38400);
 
-  Serial.begin(9600);
+//  Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for Leonardo only
   }
-  Serial.print("Initializing SD card...");
+//  Serial.print("Initializing SD card...");
   pinMode(10, OUTPUT);
 
   // Initialize the 'Wire' class for the I2C-bus.
   Wire.begin();
   if (!SD.begin(10)) {
-    Serial.println("initialization failed!");
+//    Serial.println("initialization failed!");
     return;
   }
-  Serial.println("initialization done.");
+//  Serial.println("initialization done.");
   myFile = SD.open("data.txt", FILE_WRITE);
   // if the file opened okay, write to it:
   if (myFile) {
-    Serial.print("Writing to data.txt...");
+//    Serial.print("Writing to data.txt...");
     myFile.println("------------NEW TEST RUN------------");
   // close the file:
     myFile.close();
-    Serial.println("done.");
+//    Serial.println("done.");
   } else {
     // if the file didn't open, print an error:
-    Serial.println("error opening data.txt");
+//    Serial.println("error opening data.txt");
   }
 
   // default at power-up:
@@ -716,20 +716,20 @@ void setup()
   //
 
   error = MPU6050_read (MPU6050_WHO_AM_I, &c, 1);
-  Serial.print(F("WHO_AM_I : "));
-  Serial.print(c,HEX);
-  Serial.print(F(", error = "));
-  Serial.println(error,DEC);
+//  Serial.print(F("WHO_AM_I : "));
+//  Serial.print(c,HEX);
+//  Serial.print(F(", error = "));
+//  Serial.println(error,DEC);
 
   // According to the datasheet, the 'sleep' bit
   // should read a '1'.
   // That bit has to be cleared, since the sensor
   // is in sleep mode at power-up. 
   error = MPU6050_read (MPU6050_PWR_MGMT_1, &c, 1);
-  Serial.print(F("PWR_MGMT_1 : "));
-  Serial.print(c,HEX);
-  Serial.print(F(", error = "));
-  Serial.println(error,DEC);
+//  Serial.print(F("PWR_MGMT_1 : "));
+//  Serial.print(c,HEX);
+//  Serial.print(F(", error = "));
+//  Serial.println(error,DEC);
 
 
   // Clear the 'sleep' bit to start the sensor.
@@ -739,7 +739,7 @@ void setup()
 }
 
 int currentDataSet = 0;
-int16_t wearThreshold = 2400;
+int16_t wearThreshold = 1200;
 int16_t dataSets[100];
 
 void loop()
@@ -843,8 +843,8 @@ void loop()
   accel_t_gyro_union accel_t_gyro2;
 
 
-  Serial.println(F(""));
-  Serial.println(F("MPU-6050-CAPSTONE 69"));
+//  Serial.println(F(""));
+//  Serial.println(F("MPU-6050-CAPSTONE 69"));
 
   // Read the raw values.
   // Read 14 bytes at once, 
@@ -853,8 +853,8 @@ void loop()
   // there is no filter enabled, and the values
   // are not very stable.
   error = MPU6050_read69 (MPU6050_ACCEL_XOUT_H, (uint8_t *) &accel_t_gyro2, sizeof(accel_t_gyro2));
-  Serial.print(F("Read accel, temp and gyro, error = "));
-  Serial.println(error,DEC);
+//  Serial.print(F("Read accel, temp and gyro, error = "));
+//  Serial.println(error,DEC);
 
 
   // Swap all high and low bytes.
@@ -875,19 +875,19 @@ void loop()
 
   // Print the raw acceleration values
 
-  Serial.print(F("accel x,y,z: "));
-  Serial.print(accel_t_gyro2.value.x_accel, DEC);
-  Serial.print(F(", "));
-  Serial.print(accel_t_gyro2.value.y_accel, DEC);
-  Serial.print(F(", "));
-  Serial.print(accel_t_gyro2.value.z_accel, DEC);
-  Serial.println(F(""));
+//  Serial.print(F("accel x,y,z: "));
+//  Serial.print(accel_t_gyro2.value.x_accel, DEC);
+//  Serial.print(F(", "));
+//  Serial.print(accel_t_gyro2.value.y_accel, DEC);
+//  Serial.print(F(", "));
+//  Serial.print(accel_t_gyro2.value.z_accel, DEC);
+//  Serial.println(F(""));
   
   myFile = SD.open("data.txt", FILE_WRITE);
 
   // if the file opened okay, write to it:
   if (myFile) {
-    Serial.print("Writing to data.txt for 0x69...");
+//    Serial.print("Writing to data.txt for 0x69...");
     //myFile.println("---0x69 DATA---");
 
     myFile.print(x_value);
@@ -903,10 +903,10 @@ void loop()
     //myFile.println(accel_t_gyro2.value.z_accel);
 
   
-    Serial.println("done 0x69.");
+//    Serial.println("done 0x69.");
   } else {
     // if the file didn't open, print an error:
-    Serial.println("error opening data.txt");
+//    Serial.println("error opening data.txt");
   }
 
   if (currentDataSet >= 100) {
@@ -926,18 +926,16 @@ void loop()
     if (absAverage < wearThreshold) {
       // OK
       myFile.println("SYSTEM_OK");
-      Serial.println("SYSTEM_OK");
-      Serial.println(absAverage);
+      Serial.println("#");
+//      Serial.println(absAverage);
       myFile.println(absAverage);
-      delay(5000);
 
     } else {
       // NOK
       myFile.println("WEAR_WARNING");
-      Serial.println("WEAR_WARNING");
-      Serial.println(absAverage);
+      Serial.println("*");
+//      Serial.println(absAverage);
       myFile.println(absAverage);
-      delay(5000);
 
     }
 
